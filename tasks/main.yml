@@ -13,30 +13,35 @@
   package: name=git state=present
   package: name=unzip state=present
 
-- git:
+- name: git clone laravel
+  git:
     repo: 'https://github.com/laravel/laravel.git'
     dest: /var/www/laravel
     update: no
 
 # Downloads and installs all the libs and dependencies outlined in the /path/to/project/composer.lock
-- composer:
+- name: composer install
+  composer:
     command: install
     working_dir: /var/www/laravel 
 
 # Set proper permissions on the directory
-- file:
+- name: set apache as owner on /var/www/laravel
+  file:
     path: /var/www/laravel
     owner: apache
     group: apache
     mode: 0755
     recurse: yes
 
-- file:
+- name: set proper permissions on /var/www/laravel
+  file:
     path: /var/www/laravel
     mode: 0755
     recurse: yes
 
-- file:
+- name: set proper permissions on /var/www/laravel/storage
+  file:
     path: /var/www/laravel/storage
     mode: 0755
     recurse: yes
@@ -45,9 +50,8 @@
 # Disable SELinux
 # Altenatively
 # chcon -R -t httpd_sys_rw_content_t /var/www/laravel/storage
-- selinux:
-    state: disabled
-
+- name: make selinux allow writes on the storage directory
+  shell: chcon -R -t httpd_sys_rw_content_t /var/www/laravel/storage
 
 # Step 5 – Set Encryption Key
 # Laravel uses .evn file for environment configuration. Use .evn file for configuring all the environment variables for your application like the database, SMTP, security key etc.
