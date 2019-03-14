@@ -19,13 +19,13 @@
     dest: /var/www/laravel
     update: no
 
-# Downloads and installs all the libs and dependencies outlined in the /path/to/project/composer.lock
+# downloads and installs all the libs and dependencies outlined in the /path/to/project/composer.lock
 - name: composer install
   composer:
     command: install
     working_dir: /var/www/laravel 
 
-# Set proper permissions on the directory
+# set proper permissions on the directory
 - name: set apache as owner on /var/www/laravel
   file:
     path: /var/www/laravel
@@ -47,14 +47,10 @@
     recurse: yes
 
 # allow write on storage directory.
-# Disable SELinux
-# Altenatively
-# chcon -R -t httpd_sys_rw_content_t /var/www/laravel/storage
 - name: make selinux allow writes on the storage directory
   shell: chcon -R -t httpd_sys_rw_content_t /var/www/laravel/storage
 
-# Step 5 – Set Encryption Key
-# Laravel uses .evn file for environment configuration. Use .evn file for configuring all the environment variables for your application like the database, SMTP, security key etc.
+# create the .env file
 - name: cp .env.example .env
   copy:
     src: /var/www/laravel/.env.example
@@ -63,9 +59,11 @@
     owner: apache
     group: apache
 
+# set encryption key
 - name: Run artisan key:generate
   shell: php /var/www/laravel/artisan key:generate
 
+# virtual host (this assumes that you've pointed to a vhosts.conf file at /etc/httpd/conf.d/)
 - name: create virtual host
   copy:
     src: ../files/vhosts.conf
