@@ -11,7 +11,58 @@
 - name: Ensure dependencies are installed.
   package: name=curl state=present
   package: name=git state=present
+  package: name=unzip state=present
 
 - git:
     repo: 'https://github.com/laravel/laravel.git'
-    dest: /var/www
+    dest: /var/www/laravel
+    update: no
+
+# Downloads and installs all the libs and dependencies outlined in the /path/to/project/composer.lock
+- composer:
+    command: install
+    working_dir: /var/www/laravel 
+
+# Set proper permissions on the directory
+- file:
+    path: /var/www/laravel
+    owner: apache
+    group: apache
+    mode: 0755
+    recurse: yes
+
+- file:
+    path: /var/www/laravel
+    mode: 0755
+    recurse: yes
+
+- file:
+    path: /var/www/laravel/storage
+    mode: 0755
+    recurse: yes
+
+# allow write on storage directory.
+# Disable SELinux
+# Altenatively
+# chcon -R -t httpd_sys_rw_content_t /var/www/laravel/storage
+- selinux:
+    state: disabled
+
+
+# Step 5 – Set Encryption Key
+# Laravel uses .evn file for environment configuration. Use .evn file for configuring all the environment variables for your application like the database, SMTP, security key etc.
+- name: cp .env.example .env
+  copy:
+    src: /var/www/laravel/.env.example
+    dest: /var/www/laravel/.env
+    remote_src: yes
+    owner: apache
+    group: apache
+
+- name: Run artisan key:generate
+  shell: php /var/www/laravel/artisan key:generate
+
+- name: create virtual host
+  copy:
+    src: ../files/vhosts.conf
+    dest: /etc/httpd/conf.d/vhosts.conf
